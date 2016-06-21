@@ -1,0 +1,1563 @@
+
+#変数定義
+tbld=/MDLINK/TBL
++ tbld=/MDLINK/TBL
+tmp=/tmp/$$-$(basename $0).$(date +%Y%m%d%H%M%S)
+basename $0
+++ basename EXCEL_DOWNLOAD.CGI
+date +%Y%m%d%H%M%S
+++ date +%Y%m%d%H%M%S
++ tmp=/tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449
+download=/home/trial/AP/MDLINK/KAIJIHANI/DownLoad
++ download=/home/trial/AP/MDLINK/KAIJIHANI/DownLoad
+exceld=/home/trial/AP/MDLINK/KAIJIHANI/EXCEL
++ exceld=/home/trial/AP/MDLINK/KAIJIHANI/EXCEL
+# 共通処理、SOAPメッセージ解析
+echo ${QUERY_STRING}    |
+qsstr -l_ -i_           > $tmp-param
++ echo 'makercd=000001450&ckflg=all'
++ qsstr -l_ -i_
+
+
+#エラー処理
+ERROR_EXIT() {
+    exit 0
+}
+
+echo ${QUERY_STRING} | qsstr -i_ -l_ > ${tmp}-paralist
++ echo 'makercd=000001450&ckflg=all'
++ qsstr -i_ -l_
+makercd=$(readvalue -u makercd ${tmp}-paralist)
+readvalue -u makercd ${tmp}-paralist
+++ readvalue -u makercd /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-paralist
++ makercd=000001450
+ckflg=$(readvalue -u ckflg ${tmp}-paralist)
+readvalue -u ckflg ${tmp}-paralist
+++ readvalue -u ckflg /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-paralist
++ ckflg=all
+if [ $ckflg != "all" ];then
+  maker_stores $makercd |
+  hijoin -k1 ${tbld}/TEN_NAME >${tmp}-kaijiten
+  [ -s ${tmp}-kaijiten ] || echo "0 全店" >${tmp}-kaijiten
+  cat ${tbld}/MAKER_CATEGORY/$makercd    |
+  hijoin -k1 $tbld/MDL_MAKER             |
+  kuniq -k1,10                           |
+  crossjoin - ${tmp}-kaijiten            |
+  wExcel -t ${exceld}/kaijihani.xls -s1 -n分析系 -x2 -yA -o ${tmp}-sheet1.xls
+  
+  cat ${tbld}/MDL_MAKER_TENPO_CATEGORY_UNYO |
+  selrow -e '$1=="'${makercd}'"'            |
+  selcol -c1 -c4,5                          |
+  kuniq -k1,3                               |
+  hejoin -a -k1,3 - <(cat ${tbld}/MAKER_FINELINE/${makercd} |
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5)>${tmp}-ten 2>${tmp}-all
+  cat ${tmp}-all                            |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1 -c2 -c3 -c5 -c4 -c6            |
+  awk '{print $0,"0","全店"}'               |
+  cat - <(cat ${tmp}-ten |
+  hijoin -k1,3 - <(selcol -c1 -c3,4 -c2 ${tbld}/MAKER_TENPO_CATEGORY/${makercd})|
+  selcol -c1,3 -c6 -c4,5   |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5|
+  hijoin -k7 ${tbld}/TEN_NAME)     |
+  ssort -k1,6                     |
+  wExcel -t ${tmp}-sheet1.xls -s2 -nカテマネ系 -x2 -yA -o ${download}/result_$$.xls
+else
+  cat ${tbld}/MDL_MAKER  |
+  selcol -c1             |
+  while read maker;do
+     maker_stores $maker |
+     hijoin -k1 ${tbld}/TEN_NAME >${tmp}-kaijiten_name_$maker
+     [ -s ${tmp}-kaijiten_name_$maker ] || echo "0 全店" >${tmp}-kaijiten_name_$maker
+     cat ${tmp}-kaijiten_name_$maker |
+     awk '{print "'$maker'",$0}' >>${tmp}-kaijiten
+  done
+  ls ${tbld}/MAKER_CATEGORY/*            |
+  grep -v 99999999                       |
+  xargs cat                              |
+  hijoin -k1 $tbld/MDL_MAKER             |
+  kuniq -k1,10                           |
+  crossjoin -k1 - <(ssort -k1 ${tmp}-kaijiten) |
+  wExcel -t ${exceld}/kaijihani.xls -s1 -n分析系 -x2 -yA -o ${tmp}-sheet1.xls
+  
+  cat ${tbld}/MDL_MAKER_TENPO_CATEGORY_UNYO |
+  selcol -c1 -c4,5                          |
+  kuniq -k1,3                               |
+  hejoin -a -k1,3 - <(cat ${tbld}/MAKER_FINELINE/* |grep -v 99999999|
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5)>${tmp}-ten 2>${tmp}-all
+  cat ${tmp}-all                            |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1 -c2 -c3 -c5 -c4 -c6            |
+  awk '{print $0,"0","全店"}'               |
+  cat - <(cat ${tmp}-ten                    |
+  hijoin -k1,3 <(cat ${tbld}/MAKER_TENPO_CATEGORY/* |selcol -c1 -c3,4 -c2|grep -v 99999999)|
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5          |
+  hijoin -k7 ${tbld}/TEN_NAME)              |
+  ssort -k1,6                               |
+  wExcel -t ${tmp}-sheet1.xls -s2 -nカテマネ系 -x2 -yA -o ${download}/result_$$.xls
+fi
++ '[' all '!=' all ']'
++ cat /MDLINK/TBL/MDL_MAKER
++ selcol -c1
++ read maker
++ maker_stores 000005402
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005402 ']'
++ echo '0 全店'
++ awk '{print "000005402",$0}'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005402
++ read maker
++ maker_stores 99999999
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_99999999 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_99999999
++ awk '{print "99999999",$0}'
++ read maker
++ maker_stores 000006237
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006237 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006237
++ awk '{print "000006237",$0}'
++ read maker
++ maker_stores 000001780
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001780 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001780
++ awk '{print "000001780",$0}'
++ read maker
++ maker_stores 000005215
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005215 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005215
++ awk '{print "000005215",$0}'
++ read maker
++ maker_stores 000008565
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008565 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008565
++ awk '{print "000008565",$0}'
++ read maker
++ maker_stores 000004827
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004827 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004827
++ awk '{print "000004827",$0}'
++ read maker
++ maker_stores 000006718
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006718 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006718
++ awk '{print "000006718",$0}'
++ read maker
++ maker_stores 000008845
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008845 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008845
++ awk '{print "000008845",$0}'
++ read maker
++ maker_stores 000005428
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005428 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005428
++ awk '{print "000005428",$0}'
++ read maker
++ maker_stores 000004803
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004803 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004803
++ awk '{print "000004803",$0}'
++ read maker
++ maker_stores 000004774
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004774 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004774
++ awk '{print "000004774",$0}'
++ read maker
++ maker_stores 000004824
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004824 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004824
++ awk '{print "000004824",$0}'
++ read maker
++ maker_stores 000005346
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005346 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005346
++ awk '{print "000005346",$0}'
++ read maker
++ maker_stores 000005091
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005091 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005091
++ awk '{print "000005091",$0}'
++ read maker
++ maker_stores 000003318
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003318 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003318
++ awk '{print "000003318",$0}'
++ read maker
++ maker_stores 000005836
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005836 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005836
++ awk '{print "000005836",$0}'
++ read maker
++ maker_stores 000000420
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000420 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000420
++ awk '{print "000000420",$0}'
++ read maker
++ maker_stores 000004996
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004996 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004996
++ awk '{print "000004996",$0}'
++ read maker
++ maker_stores 000005919
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005919 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005919
++ awk '{print "000005919",$0}'
++ read maker
++ maker_stores 000009866
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009866 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009866
++ awk '{print "000009866",$0}'
++ read maker
++ maker_stores 000010690
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010690 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010690
++ awk '{print "000010690",$0}'
++ read maker
++ maker_stores 000005925
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005925 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005925
++ awk '{print "000005925",$0}'
++ read maker
++ maker_stores 000008027
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008027 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008027
++ awk '{print "000008027",$0}'
++ read maker
++ maker_stores 000006251
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006251 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006251
++ awk '{print "000006251",$0}'
++ read maker
++ maker_stores 000006218
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006218 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006218
++ awk '{print "000006218",$0}'
++ read maker
++ maker_stores 000000466
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000466 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000466
++ awk '{print "000000466",$0}'
++ read maker
++ maker_stores 000004923
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004923 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004923
++ awk '{print "000004923",$0}'
++ read maker
++ maker_stores 000006315
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006315 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006315
++ awk '{print "000006315",$0}'
++ read maker
++ maker_stores 000008510
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008510 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008510
++ awk '{print "000008510",$0}'
++ read maker
++ maker_stores 000007212
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007212 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007212
++ awk '{print "000007212",$0}'
++ read maker
++ maker_stores 000010908
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010908 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010908
++ awk '{print "000010908",$0}'
++ read maker
++ maker_stores 000001291
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001291 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001291
++ awk '{print "000001291",$0}'
++ read maker
++ maker_stores 000002713
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002713 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002713
++ awk '{print "000002713",$0}'
++ read maker
++ maker_stores 000005563
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005563 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005563
++ awk '{print "000005563",$0}'
++ read maker
++ maker_stores 000008559
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008559 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008559
++ awk '{print "000008559",$0}'
++ read maker
++ maker_stores 000005991
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005991 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005991
++ awk '{print "000005991",$0}'
++ read maker
++ maker_stores 000005347
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005347 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005347
++ awk '{print "000005347",$0}'
++ read maker
++ maker_stores 000004982
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004982 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004982
++ awk '{print "000004982",$0}'
++ read maker
++ maker_stores 000008769
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008769 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008769
++ awk '{print "000008769",$0}'
++ read maker
++ maker_stores 000001446
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001446 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001446
++ awk '{print "000001446",$0}'
++ read maker
++ maker_stores 000008497
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008497 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008497
++ awk '{print "000008497",$0}'
++ read maker
++ maker_stores 000005879
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005879 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005879
++ awk '{print "000005879",$0}'
++ read maker
++ maker_stores 000006164
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006164 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006164
++ awk '{print "000006164",$0}'
++ read maker
++ maker_stores 000004048
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004048 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004048
++ awk '{print "000004048",$0}'
++ read maker
++ maker_stores 000006026
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006026 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006026
++ awk '{print "000006026",$0}'
++ read maker
++ maker_stores 000005058
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005058 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005058
++ awk '{print "000005058",$0}'
++ read maker
++ maker_stores 000009296
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009296 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009296
++ awk '{print "000009296",$0}'
++ read maker
++ maker_stores 100000001
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000001 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000001
++ awk '{print "100000001",$0}'
++ read maker
++ maker_stores 000006273
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006273 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006273
++ awk '{print "000006273",$0}'
++ read maker
++ maker_stores 000001116
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001116 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001116
++ awk '{print "000001116",$0}'
++ read maker
++ maker_stores 000001450
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001450 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001450
++ awk '{print "000001450",$0}'
++ read maker
++ maker_stores 000002046
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002046 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002046
++ awk '{print "000002046",$0}'
++ read maker
++ maker_stores 000008587
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008587 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008587
++ awk '{print "000008587",$0}'
++ read maker
++ maker_stores 100000002
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000002 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000002
++ awk '{print "100000002",$0}'
++ read maker
++ maker_stores 000005757
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005757 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005757
++ awk '{print "000005757",$0}'
++ read maker
++ maker_stores 000010907
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010907 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010907
++ awk '{print "000010907",$0}'
++ read maker
++ maker_stores 000011504
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011504 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011504
++ awk '{print "000011504",$0}'
++ read maker
++ maker_stores 000002676
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002676 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002676
++ awk '{print "000002676",$0}'
++ read maker
++ maker_stores 000005174
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005174 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005174
++ awk '{print "000005174",$0}'
++ read maker
++ maker_stores 000001232
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001232 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001232
++ awk '{print "000001232",$0}'
++ read maker
++ maker_stores 000005701
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005701 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005701
++ awk '{print "000005701",$0}'
++ read maker
++ maker_stores 000000935
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000935 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000935
++ awk '{print "000000935",$0}'
++ read maker
++ maker_stores 000003090
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003090 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003090
++ awk '{print "000003090",$0}'
++ read maker
++ maker_stores 000005435
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005435 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005435
++ awk '{print "000005435",$0}'
++ read maker
++ maker_stores 000008011
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008011 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008011
++ awk '{print "000008011",$0}'
++ read maker
++ maker_stores 000000223
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000223 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000223
++ awk '{print "000000223",$0}'
++ read maker
++ maker_stores 000001481
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001481 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001481
++ awk '{print "000001481",$0}'
++ read maker
++ maker_stores 000005128
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005128 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005128
++ awk '{print "000005128",$0}'
++ read maker
++ maker_stores 000000946
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000946 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000946
++ awk '{print "000000946",$0}'
++ read maker
++ maker_stores 000005144
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005144 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005144
++ awk '{print "000005144",$0}'
++ read maker
++ maker_stores 000001800
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001800 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001800
++ awk '{print "000001800",$0}'
++ read maker
++ maker_stores 000000188
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000188 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000188
++ awk '{print "000000188",$0}'
++ read maker
++ maker_stores 000005721
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005721 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005721
++ awk '{print "000005721",$0}'
++ read maker
++ maker_stores 000003255
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003255 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003255
++ awk '{print "000003255",$0}'
++ read maker
++ maker_stores 000012637
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000012637 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000012637
++ awk '{print "000012637",$0}'
++ read maker
++ maker_stores 000006296
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006296 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006296
++ awk '{print "000006296",$0}'
++ read maker
++ maker_stores 100000003
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000003 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000003
++ awk '{print "100000003",$0}'
++ read maker
++ maker_stores 000008773
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008773 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008773
++ awk '{print "000008773",$0}'
++ read maker
++ maker_stores 000008452
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008452 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008452
++ awk '{print "000008452",$0}'
++ read maker
++ maker_stores 000007376
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007376 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007376
++ awk '{print "000007376",$0}'
++ read maker
++ maker_stores 000012587
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000012587 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000012587
++ awk '{print "000012587",$0}'
++ read maker
++ maker_stores 000005763
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005763 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005763
++ awk '{print "000005763",$0}'
++ read maker
++ maker_stores 000005227
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005227 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005227
++ awk '{print "000005227",$0}'
++ read maker
++ maker_stores 000010397
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010397 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010397
++ awk '{print "000010397",$0}'
++ read maker
++ maker_stores 000005234
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005234 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005234
++ awk '{print "000005234",$0}'
++ read maker
++ maker_stores 000002169
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002169 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002169
++ awk '{print "000002169",$0}'
++ read maker
++ maker_stores 000006670
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006670 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006670
++ awk '{print "000006670",$0}'
++ read maker
++ maker_stores 000005417
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005417 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005417
++ awk '{print "000005417",$0}'
++ read maker
++ maker_stores 000006879
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006879 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006879
++ awk '{print "000006879",$0}'
++ read maker
++ maker_stores 000005911
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005911 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005911
++ awk '{print "000005911",$0}'
++ read maker
++ maker_stores 000008940
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008940 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008940
++ awk '{print "000008940",$0}'
++ read maker
++ maker_stores 000001500
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001500 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001500
++ awk '{print "000001500",$0}'
++ read maker
++ maker_stores 000005650
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005650 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005650
++ awk '{print "000005650",$0}'
++ read maker
++ maker_stores 000005160
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005160 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005160
++ awk '{print "000005160",$0}'
++ read maker
++ maker_stores 000009318
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009318 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009318
++ awk '{print "000009318",$0}'
++ read maker
++ maker_stores 000012682
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000012682 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000012682
++ awk '{print "000012682",$0}'
++ read maker
++ maker_stores 000006730
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006730 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006730
++ awk '{print "000006730",$0}'
++ read maker
++ maker_stores 000005799
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005799 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005799
++ awk '{print "000005799",$0}'
++ read maker
++ maker_stores 100000004
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000004 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000004
++ awk '{print "100000004",$0}'
++ read maker
++ maker_stores 000001560
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001560 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001560
++ awk '{print "000001560",$0}'
++ read maker
++ maker_stores 000002058
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002058 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002058
++ awk '{print "000002058",$0}'
++ read maker
++ maker_stores 000006213
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006213 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006213
++ awk '{print "000006213",$0}'
++ read maker
++ maker_stores 000003141
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003141 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003141
++ awk '{print "000003141",$0}'
++ read maker
++ maker_stores 000006561
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006561 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006561
++ awk '{print "000006561",$0}'
++ read maker
++ maker_stores 000000435
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000435 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000435
++ awk '{print "000000435",$0}'
++ read maker
++ maker_stores 000001891
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001891 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001891
++ awk '{print "000001891",$0}'
++ read maker
++ maker_stores 000000826
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000826 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000826
++ awk '{print "000000826",$0}'
++ read maker
++ maker_stores 000010699
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010699 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010699
++ awk '{print "000010699",$0}'
++ read maker
++ maker_stores 000008324
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008324 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008324
++ awk '{print "000008324",$0}'
++ read maker
++ maker_stores 000002971
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002971 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002971
++ awk '{print "000002971",$0}'
++ read maker
++ maker_stores 000006000
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006000 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006000
++ awk '{print "000006000",$0}'
++ read maker
++ maker_stores 000006578
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006578 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006578
++ awk '{print "000006578",$0}'
++ read maker
++ maker_stores 000010216
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010216 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010216
++ awk '{print "000010216",$0}'
++ read maker
++ maker_stores 000005772
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005772 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005772
++ awk '{print "000005772",$0}'
++ read maker
++ maker_stores 000006151
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006151 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006151
++ awk '{print "000006151",$0}'
++ read maker
++ maker_stores 000007432
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007432 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007432
++ awk '{print "000007432",$0}'
++ read maker
++ maker_stores 000009389
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009389 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009389
++ awk '{print "000009389",$0}'
++ read maker
++ maker_stores 000001963
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001963 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001963
++ awk '{print "000001963",$0}'
++ read maker
++ maker_stores 000005683
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005683 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005683
++ awk '{print "000005683",$0}'
++ read maker
++ maker_stores 000006960
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006960 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006960
++ awk '{print "000006960",$0}'
++ read maker
++ maker_stores 000005055
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005055 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005055
++ awk '{print "000005055",$0}'
++ read maker
++ maker_stores 000006992
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006992 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006992
++ awk '{print "000006992",$0}'
++ read maker
++ maker_stores 000009654
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009654 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009654
++ awk '{print "000009654",$0}'
++ read maker
++ maker_stores 000011270
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011270 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011270
++ awk '{print "000011270",$0}'
++ read maker
++ maker_stores 100000005
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000005 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000005
++ awk '{print "100000005",$0}'
++ read maker
++ maker_stores 000009059
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009059 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009059
++ awk '{print "000009059",$0}'
++ read maker
++ maker_stores 000005876
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005876 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005876
++ awk '{print "000005876",$0}'
++ read maker
++ maker_stores 000001049
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001049 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001049
++ awk '{print "000001049",$0}'
++ read maker
++ maker_stores 000008495
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008495 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008495
++ awk '{print "000008495",$0}'
++ read maker
++ maker_stores 000005453
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005453 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005453
++ awk '{print "000005453",$0}'
++ read maker
++ maker_stores 000008075
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008075 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008075
++ awk '{print "000008075",$0}'
++ read maker
++ maker_stores 000005893
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005893 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005893
++ awk '{print "000005893",$0}'
++ read maker
++ maker_stores 000008514
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008514 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008514
++ awk '{print "000008514",$0}'
++ read maker
++ maker_stores 000001506
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001506 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001506
++ awk '{print "000001506",$0}'
++ read maker
++ maker_stores 010090012
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_010090012 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_010090012
++ awk '{print "010090012",$0}'
++ read maker
++ maker_stores 010091338
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_010091338 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_010091338
++ awk '{print "010091338",$0}'
++ read maker
++ maker_stores 010090025
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_010090025 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_010090025
++ awk '{print "010090025",$0}'
++ read maker
++ maker_stores 000008009
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008009 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008009
++ awk '{print "000008009",$0}'
++ read maker
++ maker_stores 000008582
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008582 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008582
++ awk '{print "000008582",$0}'
++ read maker
++ maker_stores 000005214
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005214 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005214
++ awk '{print "000005214",$0}'
++ read maker
++ maker_stores 100000006
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000006 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000006
++ awk '{print "100000006",$0}'
++ read maker
++ maker_stores 000008087
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008087 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008087
++ awk '{print "000008087",$0}'
++ read maker
++ maker_stores 000011673
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011673 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011673
++ awk '{print "000011673",$0}'
++ read maker
++ maker_stores 000010352
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010352 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010352
++ awk '{print "000010352",$0}'
++ read maker
++ maker_stores 100000007
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000007 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000007
++ awk '{print "100000007",$0}'
++ read maker
++ maker_stores 000001636
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001636 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001636
++ awk '{print "000001636",$0}'
++ read maker
++ maker_stores 000006352
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006352 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006352
++ awk '{print "000006352",$0}'
++ read maker
++ maker_stores 100000008
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000008 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000008
++ awk '{print "100000008",$0}'
++ read maker
++ maker_stores 000005203
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005203 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005203
++ awk '{print "000005203",$0}'
++ read maker
++ maker_stores 000008340
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008340 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000008340
++ awk '{print "000008340",$0}'
++ read maker
++ maker_stores 000006028
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006028 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006028
++ awk '{print "000006028",$0}'
++ read maker
++ maker_stores 000006378
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006378 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006378
++ awk '{print "000006378",$0}'
++ read maker
++ maker_stores 000000347
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000347 ']'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000347
++ awk '{print "000000347",$0}'
++ read maker
++ maker_stores 000006705
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006705 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006705
++ awk '{print "000006705",$0}'
++ read maker
++ maker_stores 000004830
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004830 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004830
++ awk '{print "000004830",$0}'
++ read maker
++ maker_stores 000001823
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001823 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001823
++ awk '{print "000001823",$0}'
++ read maker
++ maker_stores 000005201
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005201 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005201
++ awk '{print "000005201",$0}'
++ read maker
++ maker_stores 000005586
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005586 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005586
++ awk '{print "000005586",$0}'
++ read maker
++ maker_stores 000004977
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004977 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004977
++ awk '{print "000004977",$0}'
++ read maker
++ maker_stores 000005013
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005013 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005013
++ awk '{print "000005013",$0}'
++ read maker
++ maker_stores 000006235
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006235 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006235
++ awk '{print "000006235",$0}'
++ read maker
++ maker_stores 100000011
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000011 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000011
++ awk '{print "100000011",$0}'
++ read maker
++ maker_stores 000002061
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002061 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002061
++ awk '{print "000002061",$0}'
++ read maker
++ maker_stores 100000012
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000012 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000012
++ awk '{print "100000012",$0}'
++ read maker
++ maker_stores 100000010
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000010 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000010
++ awk '{print "100000010",$0}'
++ read maker
++ maker_stores 000006882
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006882 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006882
++ awk '{print "000006882",$0}'
++ read maker
++ maker_stores 000006721
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006721 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006721
++ awk '{print "000006721",$0}'
++ read maker
++ maker_stores 000006333
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006333 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006333
++ awk '{print "000006333",$0}'
++ read maker
++ maker_stores 000002021
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002021 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002021
++ awk '{print "000002021",$0}'
++ read maker
++ maker_stores 000010937
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010937 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000010937
++ awk '{print "000010937",$0}'
++ read maker
++ maker_stores 100000013
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000013 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000013
++ awk '{print "100000013",$0}'
++ read maker
++ maker_stores 000006808
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006808 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006808
++ awk '{print "000006808",$0}'
++ read maker
++ maker_stores 000009026
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009026 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009026
++ awk '{print "000009026",$0}'
++ read maker
++ maker_stores 000011535
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011535 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011535
++ awk '{print "000011535",$0}'
++ read maker
++ maker_stores 000006011
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006011 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006011
++ awk '{print "000006011",$0}'
++ read maker
++ maker_stores 000006750
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006750 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006750
++ awk '{print "000006750",$0}'
++ read maker
++ maker_stores 000007712
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007712 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007712
++ awk '{print "000007712",$0}'
++ read maker
++ maker_stores 100000015
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000015 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000015
++ awk '{print "100000015",$0}'
++ read maker
++ maker_stores 000002213
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002213 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000002213
++ awk '{print "000002213",$0}'
++ read maker
++ maker_stores 100000016
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000016 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000016
++ awk '{print "100000016",$0}'
++ read maker
++ maker_stores 000011289
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011289 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011289
++ awk '{print "000011289",$0}'
++ read maker
++ maker_stores 100000014
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000014 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_100000014
++ awk '{print "100000014",$0}'
++ read maker
++ maker_stores 000006203
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006203 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006203
++ awk '{print "000006203",$0}'
++ read maker
++ maker_stores 000000712
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000712 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000712
++ awk '{print "000000712",$0}'
++ read maker
++ maker_stores 000001198
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001198 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001198
++ awk '{print "000001198",$0}'
++ read maker
++ maker_stores 000001489
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001489 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000001489
++ awk '{print "000001489",$0}'
++ read maker
++ maker_stores 000007086
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007086 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007086
++ awk '{print "000007086",$0}'
++ read maker
++ maker_stores 000007081
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007081 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007081
++ awk '{print "000007081",$0}'
++ read maker
++ maker_stores 000005133
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005133 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005133
++ awk '{print "000005133",$0}'
++ read maker
++ maker_stores 000007868
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007868 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007868
++ awk '{print "000007868",$0}'
++ read maker
++ maker_stores 000011477
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011477 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000011477
++ awk '{print "000011477",$0}'
++ read maker
++ maker_stores 000006704
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006704 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000006704
++ awk '{print "000006704",$0}'
++ read maker
++ maker_stores 000004307
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004307 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000004307
++ awk '{print "000004307",$0}'
++ read maker
++ maker_stores 000007392
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007392 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000007392
++ awk '{print "000007392",$0}'
++ read maker
++ maker_stores 000000974
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000974 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000974
++ awk '{print "000000974",$0}'
++ read maker
++ maker_stores 000003222
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003222 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000003222
++ awk '{print "000003222",$0}'
++ read maker
++ maker_stores 000005321
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005321 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005321
++ awk '{print "000005321",$0}'
++ read maker
++ maker_stores 000005733
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005733 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000005733
++ awk '{print "000005733",$0}'
++ read maker
++ maker_stores 000009054
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009054 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000009054
++ awk '{print "000009054",$0}'
++ read maker
++ maker_stores 000000734
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000734 ']'
++ echo '0 全店'
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten_name_000000734
++ awk '{print "000000734",$0}'
++ read maker
++ grep -v 99999999
++ xargs cat
++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
++ kuniq -k1,10
+ssort -k1 ${tmp}-kaijiten
++ wExcel -t /home/trial/AP/MDLINK/KAIJIHANI/EXCEL/kaijihani.xls -s1 $'-n\345\210\206\346\236\220\347\263\273' -x2 -yA -o /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-sheet1.xls
+++ ssort -k1 /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-kaijiten
++ crossjoin -k1 - /dev/fd/63
++ ls /MDLINK/TBL/MAKER_CATEGORY/00000000005347 /MDLINK/TBL/MAKER_CATEGORY/000000188 /MDLINK/TBL/MAKER_CATEGORY/000000223 /MDLINK/TBL/MAKER_CATEGORY/000000319 /MDLINK/TBL/MAKER_CATEGORY/000000347 /MDLINK/TBL/MAKER_CATEGORY/000000420 /MDLINK/TBL/MAKER_CATEGORY/000000435 /MDLINK/TBL/MAKER_CATEGORY/000000466 /MDLINK/TBL/MAKER_CATEGORY/000000712 /MDLINK/TBL/MAKER_CATEGORY/000000734 /MDLINK/TBL/MAKER_CATEGORY/000000826 /MDLINK/TBL/MAKER_CATEGORY/000000904 /MDLINK/TBL/MAKER_CATEGORY/000000935 /MDLINK/TBL/MAKER_CATEGORY/000000946 /MDLINK/TBL/MAKER_CATEGORY/000000974 /MDLINK/TBL/MAKER_CATEGORY/000001001 /MDLINK/TBL/MAKER_CATEGORY/000001049 /MDLINK/TBL/MAKER_CATEGORY/000001116 /MDLINK/TBL/MAKER_CATEGORY/000001198 /MDLINK/TBL/MAKER_CATEGORY/000001199 /MDLINK/TBL/MAKER_CATEGORY/000001204 /MDLINK/TBL/MAKER_CATEGORY/000001232 /MDLINK/TBL/MAKER_CATEGORY/000001291 /MDLINK/TBL/MAKER_CATEGORY/000001446 /MDLINK/TBL/MAKER_CATEGORY/000001450 /MDLINK/TBL/MAKER_CATEGORY/000001481 /MDLINK/TBL/MAKER_CATEGORY/000001489 /MDLINK/TBL/MAKER_CATEGORY/000001500 /MDLINK/TBL/MAKER_CATEGORY/000001506 /MDLINK/TBL/MAKER_CATEGORY/000001509 /MDLINK/TBL/MAKER_CATEGORY/000001560 /MDLINK/TBL/MAKER_CATEGORY/000001636 /MDLINK/TBL/MAKER_CATEGORY/000001780 /MDLINK/TBL/MAKER_CATEGORY/000001800 /MDLINK/TBL/MAKER_CATEGORY/000001823 /MDLINK/TBL/MAKER_CATEGORY/000001891 /MDLINK/TBL/MAKER_CATEGORY/000001963 /MDLINK/TBL/MAKER_CATEGORY/000002021 /MDLINK/TBL/MAKER_CATEGORY/000002046 /MDLINK/TBL/MAKER_CATEGORY/000002058 /MDLINK/TBL/MAKER_CATEGORY/000002061 /MDLINK/TBL/MAKER_CATEGORY/000002169 /MDLINK/TBL/MAKER_CATEGORY/000002213 /MDLINK/TBL/MAKER_CATEGORY/000002676 /MDLINK/TBL/MAKER_CATEGORY/000002713 /MDLINK/TBL/MAKER_CATEGORY/000002908 /MDLINK/TBL/MAKER_CATEGORY/000002971 /MDLINK/TBL/MAKER_CATEGORY/000003090 /MDLINK/TBL/MAKER_CATEGORY/000003141 /MDLINK/TBL/MAKER_CATEGORY/000003222 /MDLINK/TBL/MAKER_CATEGORY/000003238 /MDLINK/TBL/MAKER_CATEGORY/000003255 /MDLINK/TBL/MAKER_CATEGORY/000003318 /MDLINK/TBL/MAKER_CATEGORY/000003543 /MDLINK/TBL/MAKER_CATEGORY/000004048 /MDLINK/TBL/MAKER_CATEGORY/000004307 /MDLINK/TBL/MAKER_CATEGORY/000004774 /MDLINK/TBL/MAKER_CATEGORY/000004803 /MDLINK/TBL/MAKER_CATEGORY/000004824 /MDLINK/TBL/MAKER_CATEGORY/000004827 /MDLINK/TBL/MAKER_CATEGORY/000004830 /MDLINK/TBL/MAKER_CATEGORY/000004923 /MDLINK/TBL/MAKER_CATEGORY/000004977 /MDLINK/TBL/MAKER_CATEGORY/000004982 /MDLINK/TBL/MAKER_CATEGORY/000004996 /MDLINK/TBL/MAKER_CATEGORY/000005013 /MDLINK/TBL/MAKER_CATEGORY/000005055 /MDLINK/TBL/MAKER_CATEGORY/000005058 /MDLINK/TBL/MAKER_CATEGORY/000005091 /MDLINK/TBL/MAKER_CATEGORY/000005128 /MDLINK/TBL/MAKER_CATEGORY/000005133 /MDLINK/TBL/MAKER_CATEGORY/000005144 /MDLINK/TBL/MAKER_CATEGORY/000005160 /MDLINK/TBL/MAKER_CATEGORY/000005174 /MDLINK/TBL/MAKER_CATEGORY/000005201 /MDLINK/TBL/MAKER_CATEGORY/000005203 /MDLINK/TBL/MAKER_CATEGORY/000005214 /MDLINK/TBL/MAKER_CATEGORY/000005215 /MDLINK/TBL/MAKER_CATEGORY/000005227 /MDLINK/TBL/MAKER_CATEGORY/000005234 /MDLINK/TBL/MAKER_CATEGORY/000005321 /MDLINK/TBL/MAKER_CATEGORY/000005346 /MDLINK/TBL/MAKER_CATEGORY/000005347 /MDLINK/TBL/MAKER_CATEGORY/000005402 /MDLINK/TBL/MAKER_CATEGORY/000005417 /MDLINK/TBL/MAKER_CATEGORY/000005428 /MDLINK/TBL/MAKER_CATEGORY/000005435 /MDLINK/TBL/MAKER_CATEGORY/000005453 /MDLINK/TBL/MAKER_CATEGORY/000005479 /MDLINK/TBL/MAKER_CATEGORY/000005563 /MDLINK/TBL/MAKER_CATEGORY/000005586 /MDLINK/TBL/MAKER_CATEGORY/000005650 /MDLINK/TBL/MAKER_CATEGORY/000005683 /MDLINK/TBL/MAKER_CATEGORY/000005701 /MDLINK/TBL/MAKER_CATEGORY/000005703 /MDLINK/TBL/MAKER_CATEGORY/000005721 /MDLINK/TBL/MAKER_CATEGORY/000005733 /MDLINK/TBL/MAKER_CATEGORY/000005757 /MDLINK/TBL/MAKER_CATEGORY/000005763 /MDLINK/TBL/MAKER_CATEGORY/000005772 /MDLINK/TBL/MAKER_CATEGORY/000005799 /MDLINK/TBL/MAKER_CATEGORY/000005836 /MDLINK/TBL/MAKER_CATEGORY/000005876 /MDLINK/TBL/MAKER_CATEGORY/000005879 /MDLINK/TBL/MAKER_CATEGORY/000005893 /MDLINK/TBL/MAKER_CATEGORY/000005911 /MDLINK/TBL/MAKER_CATEGORY/000005919 /MDLINK/TBL/MAKER_CATEGORY/000005925 /MDLINK/TBL/MAKER_CATEGORY/000005991 /MDLINK/TBL/MAKER_CATEGORY/000006000 /MDLINK/TBL/MAKER_CATEGORY/000006011 /MDLINK/TBL/MAKER_CATEGORY/000006026 /MDLINK/TBL/MAKER_CATEGORY/000006028 /MDLINK/TBL/MAKER_CATEGORY/000006151 /MDLINK/TBL/MAKER_CATEGORY/000006164 /MDLINK/TBL/MAKER_CATEGORY/000006203 /MDLINK/TBL/MAKER_CATEGORY/000006213 /MDLINK/TBL/MAKER_CATEGORY/000006218 /MDLINK/TBL/MAKER_CATEGORY/000006235 /MDLINK/TBL/MAKER_CATEGORY/000006237 /MDLINK/TBL/MAKER_CATEGORY/000006251 /MDLINK/TBL/MAKER_CATEGORY/000006273 /MDLINK/TBL/MAKER_CATEGORY/000006296 /MDLINK/TBL/MAKER_CATEGORY/000006315 /MDLINK/TBL/MAKER_CATEGORY/000006333 /MDLINK/TBL/MAKER_CATEGORY/000006352 /MDLINK/TBL/MAKER_CATEGORY/000006378 /MDLINK/TBL/MAKER_CATEGORY/000006415 /MDLINK/TBL/MAKER_CATEGORY/000006561 /MDLINK/TBL/MAKER_CATEGORY/000006578 /MDLINK/TBL/MAKER_CATEGORY/000006640 /MDLINK/TBL/MAKER_CATEGORY/000006662 /MDLINK/TBL/MAKER_CATEGORY/000006670 /MDLINK/TBL/MAKER_CATEGORY/000006704 /MDLINK/TBL/MAKER_CATEGORY/000006705 /MDLINK/TBL/MAKER_CATEGORY/000006718 /MDLINK/TBL/MAKER_CATEGORY/000006721 /MDLINK/TBL/MAKER_CATEGORY/000006730 /MDLINK/TBL/MAKER_CATEGORY/000006750 /MDLINK/TBL/MAKER_CATEGORY/000006808 /MDLINK/TBL/MAKER_CATEGORY/000006879 /MDLINK/TBL/MAKER_CATEGORY/000006882 /MDLINK/TBL/MAKER_CATEGORY/000006960 /MDLINK/TBL/MAKER_CATEGORY/000006992 /MDLINK/TBL/MAKER_CATEGORY/000007081 /MDLINK/TBL/MAKER_CATEGORY/000007086 /MDLINK/TBL/MAKER_CATEGORY/000007212 /MDLINK/TBL/MAKER_CATEGORY/000007376 /MDLINK/TBL/MAKER_CATEGORY/000007392 /MDLINK/TBL/MAKER_CATEGORY/000007432 /MDLINK/TBL/MAKER_CATEGORY/000007712 /MDLINK/TBL/MAKER_CATEGORY/000007868 /MDLINK/TBL/MAKER_CATEGORY/000007957 /MDLINK/TBL/MAKER_CATEGORY/000008009 /MDLINK/TBL/MAKER_CATEGORY/000008011 /MDLINK/TBL/MAKER_CATEGORY/000008027 /MDLINK/TBL/MAKER_CATEGORY/000008075 /MDLINK/TBL/MAKER_CATEGORY/000008087 /MDLINK/TBL/MAKER_CATEGORY/000008324 /MDLINK/TBL/MAKER_CATEGORY/000008340 /MDLINK/TBL/MAKER_CATEGORY/000008452 /MDLINK/TBL/MAKER_CATEGORY/000008495 /MDLINK/TBL/MAKER_CATEGORY/000008497 /MDLINK/TBL/MAKER_CATEGORY/000008510 /MDLINK/TBL/MAKER_CATEGORY/000008514 /MDLINK/TBL/MAKER_CATEGORY/000008559 /MDLINK/TBL/MAKER_CATEGORY/000008565 /MDLINK/TBL/MAKER_CATEGORY/000008582 /MDLINK/TBL/MAKER_CATEGORY/000008587 /MDLINK/TBL/MAKER_CATEGORY/000008769 /MDLINK/TBL/MAKER_CATEGORY/000008773 /MDLINK/TBL/MAKER_CATEGORY/000008845 /MDLINK/TBL/MAKER_CATEGORY/000008940 /MDLINK/TBL/MAKER_CATEGORY/000009024 /MDLINK/TBL/MAKER_CATEGORY/000009026 /MDLINK/TBL/MAKER_CATEGORY/000009054 /MDLINK/TBL/MAKER_CATEGORY/000009059 /MDLINK/TBL/MAKER_CATEGORY/000009081 /MDLINK/TBL/MAKER_CATEGORY/000009149 /MDLINK/TBL/MAKER_CATEGORY/000009296 /MDLINK/TBL/MAKER_CATEGORY/000009318 /MDLINK/TBL/MAKER_CATEGORY/000009389 /MDLINK/TBL/MAKER_CATEGORY/000009654 /MDLINK/TBL/MAKER_CATEGORY/000009866 /MDLINK/TBL/MAKER_CATEGORY/000010216 /MDLINK/TBL/MAKER_CATEGORY/000010352 /MDLINK/TBL/MAKER_CATEGORY/000010397 /MDLINK/TBL/MAKER_CATEGORY/000010690 /MDLINK/TBL/MAKER_CATEGORY/000010699 /MDLINK/TBL/MAKER_CATEGORY/000010907 /MDLINK/TBL/MAKER_CATEGORY/000010908 /MDLINK/TBL/MAKER_CATEGORY/000010937 /MDLINK/TBL/MAKER_CATEGORY/000011270 /MDLINK/TBL/MAKER_CATEGORY/000011289 /MDLINK/TBL/MAKER_CATEGORY/000011477 /MDLINK/TBL/MAKER_CATEGORY/000011504 /MDLINK/TBL/MAKER_CATEGORY/000011535 /MDLINK/TBL/MAKER_CATEGORY/000011673 /MDLINK/TBL/MAKER_CATEGORY/000012582 /MDLINK/TBL/MAKER_CATEGORY/000012587 /MDLINK/TBL/MAKER_CATEGORY/000012637 /MDLINK/TBL/MAKER_CATEGORY/000012682 /MDLINK/TBL/MAKER_CATEGORY/000012797 /MDLINK/TBL/MAKER_CATEGORY/010090012 /MDLINK/TBL/MAKER_CATEGORY/010090025 /MDLINK/TBL/MAKER_CATEGORY/010091338 /MDLINK/TBL/MAKER_CATEGORY/100000001 /MDLINK/TBL/MAKER_CATEGORY/100000002 /MDLINK/TBL/MAKER_CATEGORY/100000003 /MDLINK/TBL/MAKER_CATEGORY/100000004 /MDLINK/TBL/MAKER_CATEGORY/100000005 /MDLINK/TBL/MAKER_CATEGORY/100000006 /MDLINK/TBL/MAKER_CATEGORY/100000007 /MDLINK/TBL/MAKER_CATEGORY/100000008 /MDLINK/TBL/MAKER_CATEGORY/100000009 /MDLINK/TBL/MAKER_CATEGORY/100000010 /MDLINK/TBL/MAKER_CATEGORY/100000011 /MDLINK/TBL/MAKER_CATEGORY/100000012 /MDLINK/TBL/MAKER_CATEGORY/100000013 /MDLINK/TBL/MAKER_CATEGORY/100000014 /MDLINK/TBL/MAKER_CATEGORY/100000015 /MDLINK/TBL/MAKER_CATEGORY/100000016 /MDLINK/TBL/MAKER_CATEGORY/100000017 /MDLINK/TBL/MAKER_CATEGORY/99999999
++ cat /MDLINK/TBL/MDL_MAKER_TENPO_CATEGORY_UNYO
++ selcol -c1 -c4,5
++ kuniq -k1,3
+cat ${tbld}/MAKER_FINELINE/* |grep -v 99999999|
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5
++ hejoin -a -k1,3 - /dev/fd/63
+++ grep -v 99999999
+++ selcol -c1,2 -c4 -c3 -c5
+++ kuniq -k1,5
+++ cat /MDLINK/TBL/MAKER_FINELINE/000000000 /MDLINK/TBL/MAKER_FINELINE/000000014 /MDLINK/TBL/MAKER_FINELINE/000000015 /MDLINK/TBL/MAKER_FINELINE/000000021 /MDLINK/TBL/MAKER_FINELINE/000000023 /MDLINK/TBL/MAKER_FINELINE/000000030 /MDLINK/TBL/MAKER_FINELINE/000000188 /MDLINK/TBL/MAKER_FINELINE/000000223 /MDLINK/TBL/MAKER_FINELINE/000000347 /MDLINK/TBL/MAKER_FINELINE/000000420 /MDLINK/TBL/MAKER_FINELINE/000000435 /MDLINK/TBL/MAKER_FINELINE/000000466 /MDLINK/TBL/MAKER_FINELINE/000000712 /MDLINK/TBL/MAKER_FINELINE/000000734 /MDLINK/TBL/MAKER_FINELINE/000000826 /MDLINK/TBL/MAKER_FINELINE/000000904 /MDLINK/TBL/MAKER_FINELINE/000000935 /MDLINK/TBL/MAKER_FINELINE/000000946 /MDLINK/TBL/MAKER_FINELINE/000000974 /MDLINK/TBL/MAKER_FINELINE/000001001 /MDLINK/TBL/MAKER_FINELINE/000001049 /MDLINK/TBL/MAKER_FINELINE/000001116 /MDLINK/TBL/MAKER_FINELINE/000001198 /MDLINK/TBL/MAKER_FINELINE/000001199 /MDLINK/TBL/MAKER_FINELINE/000001232 /MDLINK/TBL/MAKER_FINELINE/000001291 /MDLINK/TBL/MAKER_FINELINE/000001446 /MDLINK/TBL/MAKER_FINELINE/000001450 /MDLINK/TBL/MAKER_FINELINE/000001481 /MDLINK/TBL/MAKER_FINELINE/000001489 /MDLINK/TBL/MAKER_FINELINE/000001500 /MDLINK/TBL/MAKER_FINELINE/000001506 /MDLINK/TBL/MAKER_FINELINE/000001560 /MDLINK/TBL/MAKER_FINELINE/000001636 /MDLINK/TBL/MAKER_FINELINE/000001780 /MDLINK/TBL/MAKER_FINELINE/000001800 /MDLINK/TBL/MAKER_FINELINE/000001823 /MDLINK/TBL/MAKER_FINELINE/000001891 /MDLINK/TBL/MAKER_FINELINE/000001963 /MDLINK/TBL/MAKER_FINELINE/000002021 /MDLINK/TBL/MAKER_FINELINE/000002046 /MDLINK/TBL/MAKER_FINELINE/000002058 /MDLINK/TBL/MAKER_FINELINE/000002061 /MDLINK/TBL/MAKER_FINELINE/000002169 /MDLINK/TBL/MAKER_FINELINE/000002213 /MDLINK/TBL/MAKER_FINELINE/000002676 /MDLINK/TBL/MAKER_FINELINE/000002713 /MDLINK/TBL/MAKER_FINELINE/000002908 /MDLINK/TBL/MAKER_FINELINE/000002971 /MDLINK/TBL/MAKER_FINELINE/000003090 /MDLINK/TBL/MAKER_FINELINE/000003141 /MDLINK/TBL/MAKER_FINELINE/000003222 /MDLINK/TBL/MAKER_FINELINE/000003238 /MDLINK/TBL/MAKER_FINELINE/000003255 /MDLINK/TBL/MAKER_FINELINE/000003318 /MDLINK/TBL/MAKER_FINELINE/000003543 /MDLINK/TBL/MAKER_FINELINE/000004048 /MDLINK/TBL/MAKER_FINELINE/000004307 /MDLINK/TBL/MAKER_FINELINE/000004774 /MDLINK/TBL/MAKER_FINELINE/000004803 /MDLINK/TBL/MAKER_FINELINE/000004824 /MDLINK/TBL/MAKER_FINELINE/000004827 /MDLINK/TBL/MAKER_FINELINE/000004830 /MDLINK/TBL/MAKER_FINELINE/000004923 /MDLINK/TBL/MAKER_FINELINE/000004977 /MDLINK/TBL/MAKER_FINELINE/000004982 /MDLINK/TBL/MAKER_FINELINE/000004996 /MDLINK/TBL/MAKER_FINELINE/000005013 /MDLINK/TBL/MAKER_FINELINE/000005055 /MDLINK/TBL/MAKER_FINELINE/000005058 /MDLINK/TBL/MAKER_FINELINE/000005091 /MDLINK/TBL/MAKER_FINELINE/000005128 /MDLINK/TBL/MAKER_FINELINE/000005133 /MDLINK/TBL/MAKER_FINELINE/000005144 /MDLINK/TBL/MAKER_FINELINE/000005160 /MDLINK/TBL/MAKER_FINELINE/000005174 /MDLINK/TBL/MAKER_FINELINE/000005201 /MDLINK/TBL/MAKER_FINELINE/000005203 /MDLINK/TBL/MAKER_FINELINE/000005214 /MDLINK/TBL/MAKER_FINELINE/000005215 /MDLINK/TBL/MAKER_FINELINE/000005227 /MDLINK/TBL/MAKER_FINELINE/000005234 /MDLINK/TBL/MAKER_FINELINE/000005321 /MDLINK/TBL/MAKER_FINELINE/000005346 /MDLINK/TBL/MAKER_FINELINE/000005347 /MDLINK/TBL/MAKER_FINELINE/000005402 /MDLINK/TBL/MAKER_FINELINE/000005417 /MDLINK/TBL/MAKER_FINELINE/000005428 /MDLINK/TBL/MAKER_FINELINE/000005435 /MDLINK/TBL/MAKER_FINELINE/000005453 /MDLINK/TBL/MAKER_FINELINE/000005479 /MDLINK/TBL/MAKER_FINELINE/000005563 /MDLINK/TBL/MAKER_FINELINE/000005586 /MDLINK/TBL/MAKER_FINELINE/000005650 /MDLINK/TBL/MAKER_FINELINE/000005683 /MDLINK/TBL/MAKER_FINELINE/000005701 /MDLINK/TBL/MAKER_FINELINE/000005703 /MDLINK/TBL/MAKER_FINELINE/000005721 /MDLINK/TBL/MAKER_FINELINE/000005722 /MDLINK/TBL/MAKER_FINELINE/000005733 /MDLINK/TBL/MAKER_FINELINE/000005757 /MDLINK/TBL/MAKER_FINELINE/000005763 /MDLINK/TBL/MAKER_FINELINE/000005772 /MDLINK/TBL/MAKER_FINELINE/000005799 /MDLINK/TBL/MAKER_FINELINE/000005836 /MDLINK/TBL/MAKER_FINELINE/000005876 /MDLINK/TBL/MAKER_FINELINE/000005879 /MDLINK/TBL/MAKER_FINELINE/000005893 /MDLINK/TBL/MAKER_FINELINE/000005911 /MDLINK/TBL/MAKER_FINELINE/000005919 /MDLINK/TBL/MAKER_FINELINE/000005925 /MDLINK/TBL/MAKER_FINELINE/000005991 /MDLINK/TBL/MAKER_FINELINE/000006000 /MDLINK/TBL/MAKER_FINELINE/000006011 /MDLINK/TBL/MAKER_FINELINE/000006026 /MDLINK/TBL/MAKER_FINELINE/000006028 /MDLINK/TBL/MAKER_FINELINE/000006151 /MDLINK/TBL/MAKER_FINELINE/000006164 /MDLINK/TBL/MAKER_FINELINE/000006203 /MDLINK/TBL/MAKER_FINELINE/000006213 /MDLINK/TBL/MAKER_FINELINE/000006218 /MDLINK/TBL/MAKER_FINELINE/000006235 /MDLINK/TBL/MAKER_FINELINE/000006237 /MDLINK/TBL/MAKER_FINELINE/000006251 /MDLINK/TBL/MAKER_FINELINE/000006273 /MDLINK/TBL/MAKER_FINELINE/000006296 /MDLINK/TBL/MAKER_FINELINE/000006315 /MDLINK/TBL/MAKER_FINELINE/000006333 /MDLINK/TBL/MAKER_FINELINE/000006352 /MDLINK/TBL/MAKER_FINELINE/000006378 /MDLINK/TBL/MAKER_FINELINE/000006415 /MDLINK/TBL/MAKER_FINELINE/000006561 /MDLINK/TBL/MAKER_FINELINE/000006578 /MDLINK/TBL/MAKER_FINELINE/000006662 /MDLINK/TBL/MAKER_FINELINE/000006670 /MDLINK/TBL/MAKER_FINELINE/000006704 /MDLINK/TBL/MAKER_FINELINE/000006705 /MDLINK/TBL/MAKER_FINELINE/000006718 /MDLINK/TBL/MAKER_FINELINE/000006721 /MDLINK/TBL/MAKER_FINELINE/000006730 /MDLINK/TBL/MAKER_FINELINE/000006750 /MDLINK/TBL/MAKER_FINELINE/000006808 /MDLINK/TBL/MAKER_FINELINE/000006879 /MDLINK/TBL/MAKER_FINELINE/000006882 /MDLINK/TBL/MAKER_FINELINE/000006960 /MDLINK/TBL/MAKER_FINELINE/000006992 /MDLINK/TBL/MAKER_FINELINE/000007081 /MDLINK/TBL/MAKER_FINELINE/000007086 /MDLINK/TBL/MAKER_FINELINE/000007212 /MDLINK/TBL/MAKER_FINELINE/000007376 /MDLINK/TBL/MAKER_FINELINE/000007392 /MDLINK/TBL/MAKER_FINELINE/000007432 /MDLINK/TBL/MAKER_FINELINE/000007712 /MDLINK/TBL/MAKER_FINELINE/000007868 /MDLINK/TBL/MAKER_FINELINE/000007957 /MDLINK/TBL/MAKER_FINELINE/000008009 /MDLINK/TBL/MAKER_FINELINE/000008011 /MDLINK/TBL/MAKER_FINELINE/000008027 /MDLINK/TBL/MAKER_FINELINE/000008075 /MDLINK/TBL/MAKER_FINELINE/000008087 /MDLINK/TBL/MAKER_FINELINE/000008324 /MDLINK/TBL/MAKER_FINELINE/000008340 /MDLINK/TBL/MAKER_FINELINE/000008452 /MDLINK/TBL/MAKER_FINELINE/000008495 /MDLINK/TBL/MAKER_FINELINE/000008497 /MDLINK/TBL/MAKER_FINELINE/000008510 /MDLINK/TBL/MAKER_FINELINE/000008514 /MDLINK/TBL/MAKER_FINELINE/000008559 /MDLINK/TBL/MAKER_FINELINE/000008565 /MDLINK/TBL/MAKER_FINELINE/000008587 /MDLINK/TBL/MAKER_FINELINE/000008769 /MDLINK/TBL/MAKER_FINELINE/000008773 /MDLINK/TBL/MAKER_FINELINE/000008845 /MDLINK/TBL/MAKER_FINELINE/000008940 /MDLINK/TBL/MAKER_FINELINE/000009024 /MDLINK/TBL/MAKER_FINELINE/000009026 /MDLINK/TBL/MAKER_FINELINE/000009054 /MDLINK/TBL/MAKER_FINELINE/000009059 /MDLINK/TBL/MAKER_FINELINE/000009081 /MDLINK/TBL/MAKER_FINELINE/000009318 /MDLINK/TBL/MAKER_FINELINE/000009389 /MDLINK/TBL/MAKER_FINELINE/000009654 /MDLINK/TBL/MAKER_FINELINE/000009866 /MDLINK/TBL/MAKER_FINELINE/000010216 /MDLINK/TBL/MAKER_FINELINE/000010352 /MDLINK/TBL/MAKER_FINELINE/000010397 /MDLINK/TBL/MAKER_FINELINE/000010690 /MDLINK/TBL/MAKER_FINELINE/000010699 /MDLINK/TBL/MAKER_FINELINE/000010907 /MDLINK/TBL/MAKER_FINELINE/000010908 /MDLINK/TBL/MAKER_FINELINE/000010937 /MDLINK/TBL/MAKER_FINELINE/000011270 /MDLINK/TBL/MAKER_FINELINE/000011289 /MDLINK/TBL/MAKER_FINELINE/000011477 /MDLINK/TBL/MAKER_FINELINE/000011504 /MDLINK/TBL/MAKER_FINELINE/000011535 /MDLINK/TBL/MAKER_FINELINE/000011673 /MDLINK/TBL/MAKER_FINELINE/000012582 /MDLINK/TBL/MAKER_FINELINE/000012587 /MDLINK/TBL/MAKER_FINELINE/000012637 /MDLINK/TBL/MAKER_FINELINE/000012682 /MDLINK/TBL/MAKER_FINELINE/000012797 /MDLINK/TBL/MAKER_FINELINE/010090012 /MDLINK/TBL/MAKER_FINELINE/010090025 /MDLINK/TBL/MAKER_FINELINE/010091338 /MDLINK/TBL/MAKER_FINELINE/100000003 /MDLINK/TBL/MAKER_FINELINE/100000004 /MDLINK/TBL/MAKER_FINELINE/100000005 /MDLINK/TBL/MAKER_FINELINE/100000006 /MDLINK/TBL/MAKER_FINELINE/100000007 /MDLINK/TBL/MAKER_FINELINE/100000008 /MDLINK/TBL/MAKER_FINELINE/100000009 /MDLINK/TBL/MAKER_FINELINE/100000010 /MDLINK/TBL/MAKER_FINELINE/100000011 /MDLINK/TBL/MAKER_FINELINE/100000012 /MDLINK/TBL/MAKER_FINELINE/100000013 /MDLINK/TBL/MAKER_FINELINE/100000014 /MDLINK/TBL/MAKER_FINELINE/100000015 /MDLINK/TBL/MAKER_FINELINE/100000016 /MDLINK/TBL/MAKER_FINELINE/99999999
++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-all
++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
++ selcol -c1 -c2 -c3 -c5 -c4 -c6
++ awk '{print $0,"0","全店"}'
+cat ${tmp}-ten                    |
+  hijoin -k1,3 <(cat ${tbld}/MAKER_TENPO_CATEGORY/* |selcol -c1 -c3,4 -c2|grep -v 99999999)|
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5          |
+  hijoin -k7 ${tbld}/TEN_NAME
+++ cat /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-ten
++ cat - /dev/fd/63
+cat ${tbld}/MAKER_TENPO_CATEGORY/* |selcol -c1 -c3,4 -c2|grep -v 99999999
+++ hijoin -k1,3 /dev/fd/63
++ ssort -k1,6
++++ selcol -c1 -c3,4 -c2
++ wExcel -t /tmp/7878-EXCEL_DOWNLOAD.CGI.20160620110449-sheet1.xls -s2 $'-n\343\202\253\343\203\206\343\203\236\343\203\215\347\263\273' -x2 -yA -o /home/trial/AP/MDLINK/KAIJIHANI/DownLoad/result_7878.xls
++++ grep -v 99999999
+++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
+++ selcol -c1,2 -c3 -c6 -c4 -c7 -c5
+++ hijoin -k7 /MDLINK/TBL/TEN_NAME
++++ cat /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000000 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000188 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000223 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000347 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000420 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000435 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000466 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000712 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000734 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000826 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000904 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000935 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000946 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000000974 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001001 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001049 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001116 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001198 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001199 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001232 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001291 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001446 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001450 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001481 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001489 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001500 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001506 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001560 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001636 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001780 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001800 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001823 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001891 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001963 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002021 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002046 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002058 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002061 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002169 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002213 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002676 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002713 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002908 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000002971 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000003090 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000003141 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000003222 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000003238 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000003255 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000003318 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000003543 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004048 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004307 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004774 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004803 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004824 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004827 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004830 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004923 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004977 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004982 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000004996 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005013 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005055 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005058 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005091 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005128 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005133 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005144 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005160 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005174 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005201 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005203 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005214 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005215 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005227 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005234 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005321 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005346 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005347 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005402 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005417 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005428 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005435 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005453 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005479 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005563 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005586 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005650 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005683 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005701 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005703 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005721 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005733 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005757 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005763 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005772 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005799 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005836 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005876 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005879 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005893 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005911 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005919 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005925 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000005991 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006000 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006011 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006026 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006028 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006151 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006164 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006203 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006213 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006218 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006235 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006237 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006251 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006273 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006296 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006315 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006333 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006352 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006378 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006415 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006561 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006578 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006662 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006670 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006704 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006705 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006718 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006721 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006730 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006750 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006808 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006879 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006882 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006960 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000006992 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007081 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007086 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007212 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007376 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007392 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007432 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007712 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007868 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000007957 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008009 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008011 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008027 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008075 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008087 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008324 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008340 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008340_0314bk /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008452 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008495 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008497 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008510 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008514 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008559 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008565 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008587 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008769 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008773 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008845 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000008940 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009024 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009026 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009054 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009059 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009081 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009318 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009389 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009654 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009866 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000009866_0419_bk /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010216 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010352 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010397 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010690 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010699 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010907 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010908 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000010937 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000011270 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000011289 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000011477 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000011504 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000011535 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000011673 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000012582 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000012587 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000012637 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000012682 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000012797 /MDLINK/TBL/MAKER_TENPO_CATEGORY/010090012 /MDLINK/TBL/MAKER_TENPO_CATEGORY/010090025 /MDLINK/TBL/MAKER_TENPO_CATEGORY/010091338 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000003 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000004 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000005 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000006 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000007 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000008 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000009 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000010 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000011 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000012 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000013 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000014 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000015 /MDLINK/TBL/MAKER_TENPO_CATEGORY/100000016 /MDLINK/TBL/MAKER_TENPO_CATEGORY/99999999
+#ヘッダ出力
+echo "Accept-Ranges: bytes"
++ echo 'Accept-Ranges: bytes'
+echo "Content-type:application/octet-stream;"
++ echo 'Content-type:application/octet-stream;'
+echo "Content-Disposition: attachment; filename=result_$$.xls";
++ echo 'Content-Disposition: attachment; filename=result_7878.xls'
+echo "Content-Length: $(wc -c ${download}/result_$$.xls | awk '{print $1}')" 
+wc -c ${download}/result_$$.xls | awk '{print $1}'
+++ wc -c /home/trial/AP/MDLINK/KAIJIHANI/DownLoad/result_7878.xls
+++ awk '{print $1}'
++ echo 'Content-Length: 1742336'
+echo ""
++ echo ''
+
+cat ${download}/result_$$.xls
++ cat /home/trial/AP/MDLINK/KAIJIHANI/DownLoad/result_7878.xls
+#一時ファイル
+#rm -rf $tmp-*
+exit 
++ exit

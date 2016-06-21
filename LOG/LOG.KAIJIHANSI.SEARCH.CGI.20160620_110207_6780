@@ -1,0 +1,148 @@
+# パスの定義
+export PATH=/home/SMART:/home/SMART_TRIAL:/home/UTL:/home/TOOL:/usr/local/bin:${PATH}
++ export PATH=/home/SMART:/home/SMART_TRIAL:/home/UTL:/home/TOOL:/usr/local/bin:/usr/local/bin:/usr/bin:/bin
++ PATH=/home/SMART:/home/SMART_TRIAL:/home/UTL:/home/TOOL:/usr/local/bin:/usr/local/bin:/usr/bin:/bin
+export LANG=ja_JP.UTF-8
++ export LANG=ja_JP.UTF-8
++ LANG=ja_JP.UTF-8
+echo "Content-type:text/html;charset=UTF-8"
++ echo 'Content-type:text/html;charset=UTF-8'
+echo ""
++ echo ''
+# 起動時刻の記録
+echo "$(basename $0) START $(date +%Y%m%d%H%M%S)" >> ${logd}/UPCNT
+basename $0
+++ basename KAIJIHANSI.SEARCH.CGI
+date +%Y%m%d%H%M%S
+++ date +%Y%m%d%H%M%S
++ echo 'KAIJIHANSI.SEARCH.CGI START 20160620110207'
+touch ${semd}/$(basename $0).START.${today}
+basename $0
+++ basename KAIJIHANSI.SEARCH.CGI
++ touch /home/trial/SEMAPHORE/KAIJIHANSI.SEARCH.CGI.START.20160620
+
+#POSTによるWEBサーバーからのデータを受け渡し
+dd bs=$CONTENT_LENGTH |\
+qsstr >$tmp-name
++ dd bs=25
++ qsstr
+1+0 records in
+1+0 records out
+25 bytes (25 B) copied, 3.1e-05 seconds, 806 kB/s
+
+makercd=$(grep makercd $tmp-name|selcol -c2)
+grep makercd $tmp-name|selcol -c2
+++ grep makercd /tmp/6780-name
+++ selcol -c2
++ makercd=000001198
+rireki=$(grep rireki $tmp-name|selcol -c2)
+grep rireki $tmp-name|selcol -c2
+++ grep rireki /tmp/6780-name
+++ selcol -c2
++ rireki=_
+#帳票名取るallはすべて
+if [ -z $makercd ];then
+  cat ${tbld}/MDL_MAKER |
+  selcol -c1 -c1,2      |
+  selrow -e '$1!="99999999"'|
+  fmtdecimal -c2        |
+  ssort -k1             |
+  awk '{print $1,$2"-"$3}'|
+  render -lOPTIONLIST $htmlpath/MAIN.html -   |
+  render -lHISTORY - <(echo " ")  
+else
+  maker_stores $makercd |
+  hijoin -k1 ${tbld}/TEN_NAME >${tmp}-kaijiten
+  [ -s ${tmp}-kaijiten ] || echo "0 全店" >${tmp}-kaijiten
+  cat ${tbld}/MAKER_CATEGORY/$makercd|
+  hijoin -k1 $tbld/MDL_MAKER             |
+  kuniq -k1,10                           |
+  crossjoin - ${tmp}-kaijiten            |
+  render -lBUNSEIKILISTS $htmlpath/bunseiki.html -   |
+  cat - <(echo "###")                                   >${tmp}-category
+  #tenrowc=$(cat ${tbld}/MDL_MAKER_TENPO_CATEGORY_UNYO |
+  #selrow -e '$1=="'${makercd}'"'|rowc)
+  cat ${tbld}/MDL_MAKER_TENPO_CATEGORY_UNYO |
+  selrow -e '$1=="'${makercd}'"'            |
+  selcol -c1 -c4,5                          |
+  kuniq -k1,3                               |
+  hejoin -a -k1,3 - <(cat ${tbld}/MAKER_FINELINE/${makercd} |
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5)>${tmp}-ten 2>${tmp}-all
+  cat ${tmp}-all                            |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1 -c2 -c3 -c5 -c4 -c6            |
+  awk '{print $0,"0","全店"}'               | 
+  cat - <(cat ${tmp}-ten |
+  hijoin -k1,3 - <(selcol -c1 -c3,4 -c2 ${tbld}/MAKER_TENPO_CATEGORY/${makercd})|
+  selcol -c1,3 -c6 -c4,5   |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5|
+  hijoin -k7 ${tbld}/TEN_NAME)     |
+  ssort -k1,6                     |
+  render -lCATEGORYLISTS $htmlpath/category.html - |
+  cat ${tmp}-category -
+fi
++ '[' -z 000001198 ']'
++ maker_stores 000001198
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/6780-kaijiten ']'
++ echo '0 全店'
++ cat /MDLINK/TBL/MAKER_CATEGORY/000001198
++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
++ kuniq -k1,10
++ crossjoin - /tmp/6780-kaijiten
++ render -lBUNSEIKILISTS /home/trial/public_html/MDLINK/KAIJIHANI/HTML/bunseiki.html -
+echo "###"
+++ echo '###'
++ cat - /dev/fd/63
++ cat /MDLINK/TBL/MDL_MAKER_TENPO_CATEGORY_UNYO
++ selrow -e '$1=="000001198"'
++ selcol -c1 -c4,5
++ kuniq -k1,3
+cat ${tbld}/MAKER_FINELINE/${makercd} |
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5
+++ cat /MDLINK/TBL/MAKER_FINELINE/000001198
++ hejoin -a -k1,3 - /dev/fd/63
+++ selcol -c1,2 -c4 -c3 -c5
+++ kuniq -k1,5
++ cat /tmp/6780-all
++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
++ selcol -c1 -c2 -c3 -c5 -c4 -c6
++ awk '{print $0,"0","全店"}'
+cat ${tmp}-ten |
+  hijoin -k1,3 - <(selcol -c1 -c3,4 -c2 ${tbld}/MAKER_TENPO_CATEGORY/${makercd})|
+  selcol -c1,3 -c6 -c4,5   |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5|
+  hijoin -k7 ${tbld}/TEN_NAME
++ cat - /dev/fd/63
+++ cat /tmp/6780-ten
++ ssort -k1,6
+selcol -c1 -c3,4 -c2 ${tbld}/MAKER_TENPO_CATEGORY/${makercd}
++ render -lCATEGORYLISTS /home/trial/public_html/MDLINK/KAIJIHANI/HTML/category.html -
++++ selcol -c1 -c3,4 -c2 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001198
+++ hijoin -k1,3 - /dev/fd/63
++ cat /tmp/6780-category -
+++ selcol -c1,3 -c6 -c4,5
+++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
+++ selcol -c1,2 -c3 -c6 -c4 -c7 -c5
+++ hijoin -k7 /MDLINK/TBL/TEN_NAME
+
+
+# 終了時刻の記録
+echo "$(basename $0) END $(date +%Y%m%d%H%M%S)" >> ${logd}/UPCNT
+basename $0
+++ basename KAIJIHANSI.SEARCH.CGI
+date +%Y%m%d%H%M%S
+++ date +%Y%m%d%H%M%S
++ echo 'KAIJIHANSI.SEARCH.CGI END 20160620110207'
+touch ${semd}/$(basename $0).END.${today}
+basename $0
+++ basename KAIJIHANSI.SEARCH.CGI
++ touch /home/trial/SEMAPHORE/KAIJIHANSI.SEARCH.CGI.END.20160620
+
+#終了
+rm -f $tmp-*
++ rm -f /tmp/6780-all /tmp/6780-category /tmp/6780-kaijiten /tmp/6780-name /tmp/6780-ten
+exit 0
++ exit 0

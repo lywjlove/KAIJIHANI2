@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>開示範囲照会</title>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+<link rel="stylesheet" type="text/css" href="../CSS/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="../CSS/colorbox.css">
+<link rel="stylesheet" type="text/css" href="../CSS/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="../CSS/select2.css">
+<link rel="stylesheet" type="text/css" href="../CSS/checkbox-x.min.css".css">
+<script type="text/javascript" src="../JS/jquery-1.4.2.js"></script>
+<script type="text/javascript" src="../JS/jquery.js"></script>
+<script type="text/javascript" language="javascript" src="../JS/jquery.dataTables.js"></script>
+<script type="text/javascript" language="javascript" src="../JS/jquery.tablefix_1.0.1.js"></script>
+<script type="text/javascript" language="javascript" src="../JS/jquery.colorbox.js"></script>
+<script type="text/javascript" language="javascript" src="../JS/bootstrap.js"></script>
+<script type="text/javascript" language="javascript" src="../JS/select2.full.js"></script>
+<script type="text/javascript" language="javascript" src="../JS/cancel.js"></script>
+<style type="text/css">
+    body{
+	  background: #f5f5f5;
+	}	
+   thead {
+      background: #4d5aaf; 
+	  font-size:10pt;
+	  color:#ffffff;
+	  text-align: center;
+	}
+    thead.th {
+	  width:200px;
+	text-align: center;
+	}
+</style>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+        var guid =newGuid();
+   	cancel_instance = new cancel(jQuery);
+	cancel_instance.init({
+        elementId:"btn_cancel",
+        guid:guid
+    });
+   $("select").select2({
+  	  placeholder: "選択してください",
+  	  allowClear: false,
+	  width:'300px'
+		});
+   var dtable=$('table.display').dataTable({
+           "ordering": true,
+	   "lengthMenu": [[-1, 10, 25, 50], ["ALL", 10, 25, 50]],
+        });
+});
+  function newGuid(){
+	    var guid = "";
+	    for (var i = 1; i <= 32; i++){
+	      var n = Math.floor(Math.random()*16.0).toString(16);
+	      guid +=   n;
+	      if((i==8)||(i==12)||(i==16)||(i==20))
+	        guid += "-";
+	    }
+	    return guid;
+  }
+function oncomit(){
+cancel_instance.show();
+var makercd=$("#maker").val();
+var rireki=$("#histroy").val();
+if(rireki=="指定なし" || rireki==""){
+  var url="KAIJIHANSI.SEARCH.CGI";
+}else{
+  var url="KAIJIHANSI_RIREKI.SEARCH.CGI";
+}
+$.ajax({
+	type: "POST",
+	url: "./"+url,
+	data:{makercd:makercd,
+	rireki:rireki
+	},
+	success: function(msg){
+	$("#bunseiki").html(msg.split('###')[0]);
+	$("#catemane").html(msg.split('###')[1]);
+        var dtable=$('table.display').dataTable({
+           "ordering": true,
+           "lengthMenu": [[-1, 10, 25, 50], ["ALL", 10, 25, 50]],
+        });
+	cancel_instance.hide();
+	}
+});
+
+}
+function rireki(){
+var makercd=$("#maker").val();
+$("#histroy").select2("val",'');
+$.ajax({
+        type: "POST",
+        url: "./RIREKI.SEARCH.CGI",
+        data:"makercd="+makercd,
+        success: function(msg){
+        $("#histroy").select2({
+          placeholder: "履歴件数("+msg.split('###')[1]+")",
+          allowClear: false,
+          width:'300px'
+                });
+
+	$("#histroy").html(msg.split('###')[0]);
+	}
+});
+
+}
+function exceldownload(){
+var makercd=$("#maker").val();
+var ckflg=$("#alloutput:checked").val();
+if(makercd=="指定なし" && ckflg!="all"){
+ alert("メーカーを指定してください。")
+}else
+{
+location.href="./EXCEL_DOWNLOAD.CGI?makercd="+makercd+"&ckflg="+ckflg;
+}
+}
+</script>
+</head>
+<body>
+<form class="form-inline">
+  <div class="panel panel-default">
+  <div class="panel-heading"><h3>開示範囲照会</h3></div>
+  <div class="panel-body">
+        <div class="form-group">
+		<label for="maker">メーカー </lable>
+		<select id="maker" name="maker" onchange="rireki()">
+		 <option value="指定なし">指定なし</option>
+		OPTIONLIST
+		<option value="%1">%2</option>
+		OPTIONLIST
+		</select>
+		<label for="histroy">変更履歴 </label>
+		<select id="histroy" name="histroy">
+		HISTORY
+                <option value="%1">%1</option>
+                HISTORY
+                </select>
+        	<input class="btn btn-success" type="button" id="search"  value="照会" onclick="oncomit()"/>
+        	<input class="btn btn-success" type="button" id="download" value="Excelダウンロード" onclick="exceldownload()"/>
+		<div class="checkbox">
+		    <label>
+      			<input id="alloutput" type="checkbox" value="all" />全て
+  		    </label>
+	</div>
+	<br>
+	<div class="form-group">
+	<!--タブ-->
+		<ul class="nav nav-tabs">
+		<li class="active"><a href="#bunseiki" data-toggle="tab">分析系</a></li>
+		<li><a href="#catemane" data-toggle="tab">カテマネ系</a></li>
+		</ul>
+	<!-- / タブ-->
+		<div id="tabs" class="tab-content">
+		<div class="tab-pane fade in active" id="bunseiki" width="100%">
+		</div>
+		<div class="tab-pane fade" id="catemane" width="100%">
+		</div>
+	</div>	
+</div>
+</div>
+</div>
+</form>
+<!--<div><canvas width="400" height="300" id="sample"></canvas></div>-->
+</body>
+</html>     

@@ -1,0 +1,33 @@
+
+#変数定義
+tbld=/MDLINK/TBL
++ tbld=/MDLINK/TBL
+tmp=/tmp/$$-$(basename $0).$(date +%Y%m%d%H%M%S)
+basename $0
+++ basename EXCEL_DOWNLOAD.CGI
+date +%Y%m%d%H%M%S
+++ date +%Y%m%d%H%M%S
++ tmp=/tmp/3084-EXCEL_DOWNLOAD.CGI.20160617165244
+download=/home/trial/AP/MDLINK/KAIJIHANI/DownLoad
++ download=/home/trial/AP/MDLINK/KAIJIHANI/DownLoad
+exceld=/home/trial/AP/MDLINK/KAIJIHANI/EXCEL
++ exceld=/home/trial/AP/MDLINK/KAIJIHANI/EXCEL
+# 共通処理、SOAPメッセージ解析
+echo ${QUERY_STRING}    |
+qsstr -l_ -i_           > $tmp-param
++ echo 'makercd=000000935&ckflg=all'
++ qsstr -l_ -i_
+
+
+#エラー処理
+ERROR_EXIT() {
+    exit 0
+}
+
+echo ${QUERY_STRING} | qsstr -i_ -l_ > ${tmp}-paralist
++ echo 'makercd=000000935&ckflg=all'
++ qsstr -i_ -l_
+
+  hijoin -k1 ${tbld}/TEN_NAME)           |
+EXCEL_DOWNLOAD.CGI: line 35: syntax error near unexpected token `)'
+EXCEL_DOWNLOAD.CGI: line 35: `  hijoin -k1 ${tbld}/TEN_NAME)           |'

@@ -1,0 +1,62 @@
+# パスの定義
+export PATH=/home/SMART:/home/SMART_TRIAL:/home/UTL:/home/TOOL:/usr/local/bin:${PATH}
++ export PATH=/home/SMART:/home/SMART_TRIAL:/home/UTL:/home/TOOL:/usr/local/bin:/usr/local/bin:/usr/bin:/bin
++ PATH=/home/SMART:/home/SMART_TRIAL:/home/UTL:/home/TOOL:/usr/local/bin:/usr/local/bin:/usr/bin:/bin
+export LANG=ja_JP.UTF-8
++ export LANG=ja_JP.UTF-8
++ LANG=ja_JP.UTF-8
+echo "Content-type:text/html;charset=UTF-8"
++ echo 'Content-type:text/html;charset=UTF-8'
+echo ""
++ echo ''
+# 起動時刻の記録
+echo "$(basename $0) START $(date +%Y%m%d%H%M%S)" >> ${logd}/UPCNT
+basename $0
+++ basename KAIJIHANSI.SEARCH.CGI
+date +%Y%m%d%H%M%S
+++ date +%Y%m%d%H%M%S
++ echo 'KAIJIHANSI.SEARCH.CGI START 20160617162552'
+touch ${semd}/$(basename $0).START.${today}
+basename $0
+++ basename KAIJIHANSI.SEARCH.CGI
++ touch /home/trial/SEMAPHORE/KAIJIHANSI.SEARCH.CGI.START.20160617
+
+#POSTによるWEBサーバーからのデータを受け渡し
+dd bs=$CONTENT_LENGTH |\
+qsstr >$tmp-name
++ dd bs=25
++ qsstr
+1+0 records in
+1+0 records out
+25 bytes (25 B) copied, 1.4e-05 seconds, 1.8 MB/s
+
+makercd=$(grep makercd $tmp-name|selcol -c2)
+grep makercd $tmp-name|selcol -c2
+++ grep makercd /tmp/23974-name
+++ selcol -c2
++ makercd=000000223
+rireki=$(grep rireki $tmp-name|selcol -c2)
+grep rireki $tmp-name|selcol -c2
+++ grep rireki /tmp/23974-name
+++ selcol -c2
++ rireki=_
+#帳票名取るallはすべて
+if [ -z $makercd ];then
+  cat ${tbld}/MDL_MAKER |
+  selcol -c1 -c1,2      |
+  selrow -e '$1!="99999999"'|
+  fmtdecimal -c2        |
+  ssort -k1             |
+  awk '{print $1,$2"-"$3}'|
+  render -lOPTIONLIST $htmlpath/MAIN.html -   |
+  render -lHISTORY - <(echo " ")  
+else
+  maker_stores $makercd >${tmp}-kaijiten
+  [ -s ${tmp}-kaijiten ] || echo "0 全店" >${tmp}-kaijiten
+  cat ${tbld}/MAKER_CATEGORY/$makercd|
+  hijoin -k1 $tbld/MDL_MAKER             |
+  kuniq -k1,10                           |
+  crossjoin - ${tmp}-kaijiten            |
+  hijoin -k1 ${tbld}/TEN_NAME)           |            
+KAIJIHANSI.SEARCH.CGI: line 58: syntax error near unexpected token `)'
+KAIJIHANSI.SEARCH.CGI: line 58: `  hijoin -k1 ${tbld}/TEN_NAME)           |            '

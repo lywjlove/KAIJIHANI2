@@ -1,0 +1,162 @@
+
+#変数定義
+tbld=/MDLINK/TBL
++ tbld=/MDLINK/TBL
+tmp=/tmp/$$-$(basename $0).$(date +%Y%m%d%H%M%S)
+basename $0
+++ basename EXCEL_DOWNLOAD.CGI
+date +%Y%m%d%H%M%S
+++ date +%Y%m%d%H%M%S
++ tmp=/tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444
+download=/home/trial/AP/MDLINK/KAIJIHANI/DownLoad
++ download=/home/trial/AP/MDLINK/KAIJIHANI/DownLoad
+exceld=/home/trial/AP/MDLINK/KAIJIHANI/EXCEL
++ exceld=/home/trial/AP/MDLINK/KAIJIHANI/EXCEL
+# 共通処理、SOAPメッセージ解析
+echo ${QUERY_STRING}    |
+qsstr -l_ -i_           > $tmp-param
++ echo 'makercd=000001450&ckflg=undefined'
++ qsstr -l_ -i_
+
+
+#エラー処理
+ERROR_EXIT() {
+    exit 0
+}
+
+echo ${QUERY_STRING} | qsstr -i_ -l_ > ${tmp}-paralist
++ echo 'makercd=000001450&ckflg=undefined'
++ qsstr -i_ -l_
+makercd=$(readvalue -u makercd ${tmp}-paralist)
+readvalue -u makercd ${tmp}-paralist
+++ readvalue -u makercd /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-paralist
++ makercd=000001450
+ckflg=$(readvalue -u ckflg ${tmp}-paralist)
+readvalue -u ckflg ${tmp}-paralist
+++ readvalue -u ckflg /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-paralist
++ ckflg=undefined
+if [ $ckflg != "all" ];then
+  maker_stores $makercd |
+  hijoin -k1 ${tbld}/TEN_NAME >${tmp}-kaijiten
+  [ -s ${tmp}-kaijiten ] || echo "0 全店" >${tmp}-kaijiten
+  cat ${tbld}/MAKER_CATEGORY/$makercd    |
+  hijoin -k1 $tbld/MDL_MAKER             |
+  kuniq -k1,10                           |
+  crossjoin - ${tmp}-kaijiten            |
+  wExcel -t ${exceld}/kaijihani.xls -s1 -n分析系 -x2 -yA -o ${tmp}-sheet1.xls
+  
+  cat ${tbld}/MDL_MAKER_TENPO_CATEGORY_UNYO |
+  selrow -e '$1=="'${makercd}'"'            |
+  selcol -c1 -c4,5                          |
+  kuniq -k1,3                               |
+  hejoin -a -k1,3 - <(cat ${tbld}/MAKER_FINELINE/${makercd} |
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5)>${tmp}-ten 2>${tmp}-all
+  cat ${tmp}-all                            |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1 -c2 -c3 -c5 -c4 -c6            |
+  awk '{print $0,"0","全店"}'               |
+  cat - <(cat ${tmp}-ten |
+  hijoin -k1,3 - <(selcol -c1 -c3,4 -c2 ${tbld}/MAKER_TENPO_CATEGORY/${makercd})|
+  selcol -c1,3 -c6 -c4,5   |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5|
+  hijoin -k7 ${tbld}/TEN_NAME)     |
+  ssort -k1,6                     |
+  wExcel -t ${tmp}-sheet1.xls -s2 -nカテマネ系 -x2 -yA -o ${download}/result_$$.xls
+else
+  cat ${tbld}/MDL_MAKER  |
+  selcol -c1             |
+  while read maker;do
+     maker_stores $maker |
+     hijoin -k1 ${tbld}/TEN_NAME >${tmp}-kaijiten_name_$maker
+     [ -s ${tmp}-kaijiten_name_$maker ] || echo "0 全店" >${tmp}-kaijiten_name_$maker
+     cat ${tmp}-kaijiten_name_$maker |
+     awk '{print "'$maker'",$0}' >>${tmp}-kaijiten
+  done
+  ls ${tbld}/MAKER_CATEGORY/*            |
+  grep -v 99999999                       |
+  xargs cat                              |
+  hijoin -k1 $tbld/MDL_MAKER             |
+  kuniq -k1,10                           |
+  crossjoin -k1 - <(ssort -k1 ${tmp}-kaijiten) |
+  wExcel -t ${exceld}/kaijihani.xls -s1 -n分析系 -x2 -yA -o ${tmp}-sheet1.xls
+  
+  cat ${tbld}/MDL_MAKER_TENPO_CATEGORY_UNYO |
+  selcol -c1 -c4,5                          |
+  kuniq -k1,3                               |
+  hejoin -a -k1,3 - <(cat ${tbld}/MAKER_FINELINE/* |grep -v 99999999|
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5)>${tmp}-ten 2>${tmp}-all
+  cat ${tmp}-all                            |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1 -c2 -c3 -c5 -c4 -c6            |
+  awk '{print $0,"0","全店"}'               |
+  cat - <(cat ${tmp}-ten                    |
+  hijoin -k1,3 <(cat ${tbld}/MAKER_TENPO_CATEGORY/* |selcol -c1 -c3,4 -c2|grep -v 99999999)|
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5          |
+  hijoin -k7 ${tbld}/TEN_NAME)              |
+  ssort -k1,6                               |
+  wExcel -t ${tmp}-sheet1.xls -s2 -nカテマネ系 -x2 -yA -o ${download}/result_$$.xls
+fi
++ '[' undefined '!=' all ']'
++ maker_stores 000001450
++ hijoin -k1 /MDLINK/TBL/TEN_NAME
++ '[' -s /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-kaijiten ']'
++ echo '0 全店'
++ cat /MDLINK/TBL/MAKER_CATEGORY/000001450
++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
++ kuniq -k1,10
++ crossjoin - /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-kaijiten
++ wExcel -t /home/trial/AP/MDLINK/KAIJIHANI/EXCEL/kaijihani.xls -s1 $'-n\345\210\206\346\236\220\347\263\273' -x2 -yA -o /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-sheet1.xls
++ cat /MDLINK/TBL/MDL_MAKER_TENPO_CATEGORY_UNYO
++ selrow -e '$1=="000001450"'
++ selcol -c1 -c4,5
++ kuniq -k1,3
+cat ${tbld}/MAKER_FINELINE/${makercd} |
+  selcol -c1,2 -c4 -c3 -c5|kuniq -k1,5
+++ cat /MDLINK/TBL/MAKER_FINELINE/000001450
++ hejoin -a -k1,3 - /dev/fd/63
+++ selcol -c1,2 -c4 -c3 -c5
+++ kuniq -k1,5
++ cat /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-all
++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
++ selcol -c1 -c2 -c3 -c5 -c4 -c6
++ awk '{print $0,"0","全店"}'
++ ssort -k1,6
+cat ${tmp}-ten |
+  hijoin -k1,3 - <(selcol -c1 -c3,4 -c2 ${tbld}/MAKER_TENPO_CATEGORY/${makercd})|
++ wExcel -t /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-sheet1.xls -s2 $'-n\343\202\253\343\203\206\343\203\236\343\203\215\347\263\273' -x2 -yA -o /home/trial/AP/MDLINK/KAIJIHANI/DownLoad/result_7746.xls
+  selcol -c1,3 -c6 -c4,5   |
+  hijoin -k1 ${tbld}/MDL_MAKER              |
+  selcol -c1,2 -c3 -c6 -c4 -c7 -c5|
+  hijoin -k7 ${tbld}/TEN_NAME
++ cat - /dev/fd/63
+selcol -c1 -c3,4 -c2 ${tbld}/MAKER_TENPO_CATEGORY/${makercd}
+++ selcol -c1,3 -c6 -c4,5
++++ selcol -c1 -c3,4 -c2 /MDLINK/TBL/MAKER_TENPO_CATEGORY/000001450
+++ hijoin -k1,3 - /dev/fd/63
+++ hijoin -k1 /MDLINK/TBL/MDL_MAKER
+++ cat /tmp/7746-EXCEL_DOWNLOAD.CGI.20160620110444-ten
+++ selcol -c1,2 -c3 -c6 -c4 -c7 -c5
+++ hijoin -k7 /MDLINK/TBL/TEN_NAME
+#ヘッダ出力
+echo "Accept-Ranges: bytes"
++ echo 'Accept-Ranges: bytes'
+echo "Content-type:application/octet-stream;"
++ echo 'Content-type:application/octet-stream;'
+echo "Content-Disposition: attachment; filename=result_$$.xls";
++ echo 'Content-Disposition: attachment; filename=result_7746.xls'
+echo "Content-Length: $(wc -c ${download}/result_$$.xls | awk '{print $1}')" 
+wc -c ${download}/result_$$.xls | awk '{print $1}'
+++ wc -c /home/trial/AP/MDLINK/KAIJIHANI/DownLoad/result_7746.xls
+++ awk '{print $1}'
++ echo 'Content-Length: 256512'
+echo ""
++ echo ''
+
+cat ${download}/result_$$.xls
++ cat /home/trial/AP/MDLINK/KAIJIHANI/DownLoad/result_7746.xls
+#一時ファイル
+#rm -rf $tmp-*
+exit 
++ exit
